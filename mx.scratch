@@ -1,15 +1,15 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Project>
-<ProjectName>/Users/kevin/Documents/workspace/TemperatureHumidityEPD/\TemperatureHumidityEPD</ProjectName>
+<ProjectName>/home/kevin/Documents/ARM/workspace/TemperatureHumidityEPD/\TemperatureHumidityEPD</ProjectName>
+<ProjectNature>C</ProjectNature> 
 <CMSIS>Drivers/CMSIS</CMSIS>
-<HAL_Driver>/Users/kevin/STM32Cube/Repository//STM32Cube_FW_L0_V1.10.0/Drivers/CMSIS</HAL_Driver>
-
+<HAL_Driver>/home/kevin/STM32Cube/Repository//STM32Cube_FW_L0_V1.10.0/Drivers/CMSIS</HAL_Driver>
 <Toolchain>Makefile</Toolchain>
 <Version>0</Version>
 
 <filestoremove>
-	<file>
-	</file>
+    <file>
+    </file>
 </filestoremove>
 
 <inctoremove>
@@ -31,7 +31,7 @@
 			
     <usedDebug>true</usedDebug>
     	<debugprobe>swd</debugprobe>
-    <optimization></optimization>
+    <optimization>2</optimization>
     <icfloc>0</icfloc>
     <Adefines>
         <define></define>
@@ -52,8 +52,6 @@
         <Cdefines>
             <define>USE_FULL_LL_DRIVER</define>
             <define>MBEDTLS_CONFIG_FILE=&quot;mbedtls_config.h&quot;</define>
-            <define>_TIMEVAL_DEFINED</define>
-            <define>_SYS_TIME_H_</define>
         </Cdefines>         
     </definestoremove>
     
@@ -138,7 +136,7 @@
 		    <group>
 		    	<name>CMSIS</name>
 							<file>
-								<name>Src/system_stm32l0xx.c</name>
+								<name>/Src/system_stm32l0xx.c</name>
 							</file>
 		    	</group>
 	  </group>   
@@ -160,7 +158,7 @@
 
 
 
-               <group>
+    <group>
         <name>Src</name>
                     <group>
                     <name>main.c</name>
@@ -168,8 +166,8 @@
                                             <name>Src/main.c</name>
                                     </file>
                     </group>
-        </group>
-               <group>
+    </group>
+    <group>
         <name>Src</name>
                     <group>
                     <name>stm32l0xx_hal_msp.c</name>
@@ -177,8 +175,8 @@
                                             <name>Src/stm32l0xx_hal_msp.c</name>
                                     </file>
                     </group>
-        </group>
-               <group>
+    </group>
+    <group>
         <name>Src</name>
                     <group>
                     <name>stm32l0xx_it.c</name>
@@ -186,7 +184,7 @@
                                             <name>Src/stm32l0xx_it.c</name>
                                     </file>
                     </group>
-        </group>
+    </group>
 
 </group> 
   </group>

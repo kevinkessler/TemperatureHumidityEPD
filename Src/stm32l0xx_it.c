@@ -42,6 +42,7 @@
 /* External variables --------------------------------------------------------*/
 extern DMA_HandleTypeDef hdma_i2c1_rx;
 extern DMA_HandleTypeDef hdma_i2c1_tx;
+extern RTC_HandleTypeDef hrtc;
 
 /******************************************************************************/
 /*            Cortex-M0+ Processor Interruption and Exception Handlers         */ 
@@ -70,6 +71,8 @@ void HardFault_Handler(void)
   /* USER CODE END HardFault_IRQn 0 */
   while (1)
   {
+    /* USER CODE BEGIN W1_HardFault_IRQn 0 */
+    /* USER CODE END W1_HardFault_IRQn 0 */
   }
   /* USER CODE BEGIN HardFault_IRQn 1 */
 
@@ -123,6 +126,20 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32l0xx.s).                    */
 /******************************************************************************/
+
+/**
+* @brief This function handles RTC global interrupt through EXTI lines 17, 19 and 20 and LSE CSS interrupt through EXTI line 19.
+*/
+void RTC_IRQHandler(void)
+{
+  /* USER CODE BEGIN RTC_IRQn 0 */
+
+  /* USER CODE END RTC_IRQn 0 */
+  HAL_RTCEx_WakeUpTimerIRQHandler(&hrtc);
+  /* USER CODE BEGIN RTC_IRQn 1 */
+
+  /* USER CODE END RTC_IRQn 1 */
+}
 
 /**
 * @brief This function handles DMA1 channel 2 and channel 3 interrupts.

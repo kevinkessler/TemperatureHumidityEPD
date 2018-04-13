@@ -27,6 +27,7 @@
 
 #include "epdif.h"
 #include "main.h"
+#include "epdcontroller.h"
 
 extern SPI_HandleTypeDef hspi1;
 

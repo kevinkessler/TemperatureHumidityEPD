@@ -321,7 +321,7 @@ void EPD_LoadRedFrame(EPD* epd, const unsigned char* frame_buffer_red) {
 
 void EPD_DisplayRefresh(EPD* epd) {
   EPD_SendCommand(epd, DISPLAY_REFRESH);
-  EPD_WaitUntilIdle(epd);
+  //EPD_WaitUntilIdle(epd);
 }
 
 

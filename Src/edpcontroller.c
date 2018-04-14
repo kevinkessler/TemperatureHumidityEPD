@@ -178,10 +178,8 @@ void pollSensors(){
 	uint8_t temp_data[2];
 
 
-	__HAL_RCC_I2C1_CLK_ENABLE();
 	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 1000);
 	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe0, 1, temp_data, 2, 1000);
-	__HAL_RCC_I2C1_CLK_DISABLE();
 
 	int16_t hum = (int16_t)(((hum_data[0] * 256 + hum_data[1]) * 125 / 65536.0) - 5.5); //Rounding by adding 0.5
 	int16_t temp = (int16_t)(((((temp_data[0] << 8) + temp_data[1]) * 175.72 / 65536.0) - 46.85) * (9.0/5.0) + 32.5);

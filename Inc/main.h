@@ -55,6 +55,8 @@
 #define RST_GPIO_Port GPIOA
 #define BUSY_Pin GPIO_PIN_4
 #define BUSY_GPIO_Port GPIOA
+#define EPD_POWER_Pin GPIO_PIN_6
+#define EPD_POWER_GPIO_Port GPIOA
 
 /* ########################## Assert Selection ############################## */
 /**

@@ -101,6 +101,7 @@ static uint8_t getBatteryIndex(uint8_t value) {
 
 void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
 
+	HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_RESET);
 	EPD_Init(&epd);
 
 	Paint paint_black;
@@ -143,9 +144,9 @@ void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
 
 
 	EPD_DisplayRefresh(&epd);
-//	SlowClock();
 	EPD_WaitUntilIdle(&epd);
 	EPD_Sleep(&epd);
+	HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_SET);
 
 }
 
@@ -172,11 +173,27 @@ int Display_init() {
 	return 0;
 }
 
+void enterStandby()
+{
+	GPIO_InitTypeDef GPIO_InitStruct;
+
+	GPIO_InitStruct.Pin = SPI_CS_Pin|DC_Pin|RST_Pin|BUSY_Pin|EPD_POWER_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_ANALOG;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
+	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
+
+	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+
+	HAL_PWR_EnterSTANDBYMode();
+}
+
 void pollSensors(){
 
 	uint8_t hum_data[2];
 	uint8_t temp_data[2];
-
 
 	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 1000);
 	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe0, 1, temp_data, 2, 1000);
@@ -193,8 +210,7 @@ void pollSensors(){
 	uint8_t volt_idx = getBatteryIndex(v_perc);
 
 	displayData(temp, hum, volt_idx);
-	HAL_Delay(10000);
-
+	enterStandby();
 
 
 }

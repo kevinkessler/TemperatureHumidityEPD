@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include "epd1in54b.h"
 #include "epdif.h"
+#include "epdcontroller.h"
 
 int EPD_Init(EPD* epd) {
   epd->reset_pin = RST_PIN;
@@ -119,9 +120,11 @@ void EPD_SendData(EPD* epd, unsigned char data) {
  *  @brief: Wait until the busy_pin goes HIGH
  */
 void EPD_WaitUntilIdle(EPD* epd) {
-  while(EPD_DigitalRead(epd, epd->busy_pin) == 0) {      //0: busy, 1: idle
-    EPD_DelayMs(epd, 100);
-  }      
+//  while(EPD_DigitalRead(epd, epd->busy_pin) == 0) {      //0: busy, 1: idle
+//    EPD_DelayMs(epd, 100);
+//  }
+	if(EPD_DigitalRead(epd,epd->busy_pin)==0)
+	 sleepWait();
 }
 
 /**

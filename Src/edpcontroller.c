@@ -1,5 +1,5 @@
 /**
- *  @filename   :   imagedata.c
+ *  @filename   :   edpcontroller.c
  *  @brief      :   ePaper Display Controller for Temperature/Humidity Display
  *
  * Copyright (C) 2018 Kevin Kessler
@@ -195,8 +195,9 @@ void pollSensors(){
 	uint8_t hum_data[2];
 	uint8_t temp_data[2];
 
-	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 1000);
-	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe0, 1, temp_data, 2, 1000);
+
+	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 60000);
+	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe3, 1, temp_data, 2, 60000);
 
 	int16_t hum = (int16_t)(((hum_data[0] * 256 + hum_data[1]) * 125 / 65536.0) - 5.5); //Rounding by adding 0.5
 	int16_t temp = (int16_t)(((((temp_data[0] << 8) + temp_data[1]) * 175.72 / 65536.0) - 46.85) * (9.0/5.0) + 32.5);
@@ -212,6 +213,40 @@ void pollSensors(){
 	displayData(temp, hum, volt_idx);
 	enterStandby();
 
+
+}
+
+void sleepWait() {
+	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+	HAL_SuspendTick();
+	HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+	HAL_ResumeTick();
+
+}
+
+void sleepDelay(uint16_t delaytime){
+
+	if(delaytime < 25) {
+		HAL_Delay(delaytime);
+		return;
+	}
+	else {
+		if(HAL_RTCEx_DeactivateWakeUpTimer(&hrtc) != HAL_OK) {
+			HAL_Delay(delaytime);
+			return;
+		}
+		__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+		uint32_t counter = (uint32_t)(delaytime * 1000) /432;
+		if(HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, (uint16_t)counter, RTC_WAKEUPCLOCK_RTCCLK_DIV16)!=HAL_OK) {
+			HAL_Delay(delaytime);
+			return;
+		}
+
+		HAL_SuspendTick();
+		HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+		HAL_ResumeTick();
+
+	}
 
 }
 

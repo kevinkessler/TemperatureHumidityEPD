@@ -1,7 +1,8 @@
 /**
   ******************************************************************************
-  * File Name          : main.hpp
-  * Description        : This file contains the common defines of the application
+  * @file           : main.h
+  * @brief          : Header for main.c file.
+  *                   This file contains the common defines of the application.
   ******************************************************************************
   ** This notice applies to any and all portions of this file
   * that are not between comment pairs USER CODE BEGIN and
@@ -35,12 +36,13 @@
   *
   ******************************************************************************
   */
+
 /* Define to prevent recursive inclusion -------------------------------------*/
-#ifndef __MAIN_H
-#define __MAIN_H
-  /* Includes ------------------------------------------------------------------*/
+#ifndef __MAIN_H__
+#define __MAIN_H__
 
 /* Includes ------------------------------------------------------------------*/
+
 /* USER CODE BEGIN Includes */
 
 /* USER CODE END Includes */
@@ -55,6 +57,7 @@
 #define RST_GPIO_Port GPIOA
 #define BUSY_Pin GPIO_PIN_4
 #define BUSY_GPIO_Port GPIOA
+#define BUSY_EXTI_IRQn EXTI4_15_IRQn
 #define EPD_POWER_Pin GPIO_PIN_6
 #define EPD_POWER_GPIO_Port GPIOA
 
@@ -79,13 +82,6 @@ void _Error_Handler(char *, int);
 }
 #endif
 
-/**
-  * @}
-  */ 
+#endif /* __MAIN_H__ */
 
-/**
-  * @}
-*/ 
-
-#endif /* __MAIN_H */
 /************************ (C) COPYRIGHT STMicroelectronics *****END OF FILE****/

@@ -173,7 +173,7 @@ int Display_init() {
 	return 0;
 }
 
-void enterStandby()
+void enterStandby(uint8_t seconds)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -185,7 +185,7 @@ void enterStandby()
 
 	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
-	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, seconds, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
 
 	HAL_PWR_EnterSTANDBYMode();
 }
@@ -195,6 +195,9 @@ void pollSensors(){
 	uint8_t hum_data[2];
 	uint8_t temp_data[2];
 
+	int16_t temp_last = HAL_RTCEx_BKUPRead(&hrtc, TEMP_REG);
+	int16_t hum_last = HAL_RTCEx_BKUPRead(&hrtc, HUM_REG);
+	uint8_t volt_last = HAL_RTCEx_BKUPRead(&hrtc, VOLT_REG);
 
 	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 60000);
 	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe3, 1, temp_data, 2, 60000);
@@ -210,8 +213,17 @@ void pollSensors(){
 	uint8_t v_perc = (uint8_t)(((voltage - 2.0)/1.0) * 100.0);
 	uint8_t volt_idx = getBatteryIndex(v_perc);
 
-	displayData(temp, hum, volt_idx);
-	enterStandby();
+	uint8_t sec=20;
+	if ((temp_last != temp)||(hum_last != hum)||(volt_last != volt_idx)) {
+		sec = 60;
+		displayData(temp, hum, volt_idx);
+	}
+
+	HAL_RTCEx_BKUPWrite(&hrtc, TEMP_REG, temp);
+	HAL_RTCEx_BKUPWrite(&hrtc, HUM_REG, hum);
+	HAL_RTCEx_BKUPWrite(&hrtc, VOLT_REG, volt_idx);
+
+	enterStandby(sec);
 
 
 }

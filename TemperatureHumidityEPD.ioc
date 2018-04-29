@@ -1,4 +1,10 @@
 #MicroXplorer Configuration settings - do not modify
+ADC.ClockPrescaler=ADC_CLOCK_SYNC_PCLK_DIV1
+ADC.IPParameters=LowPowerAutoWait,LowPowerFrequencyMode,LowPowerAutoPowerOff,Resolution,ClockPrescaler
+ADC.LowPowerAutoPowerOff=DISABLE
+ADC.LowPowerAutoWait=ENABLE
+ADC.LowPowerFrequencyMode=ENABLE
+ADC.Resolution=ADC_RESOLUTION_12B
 Dma.I2C1_RX.0.Direction=DMA_PERIPH_TO_MEMORY
 Dma.I2C1_RX.0.Instance=DMA1_Channel7
 Dma.I2C1_RX.0.MemDataAlignment=DMA_MDATAALIGN_BYTE

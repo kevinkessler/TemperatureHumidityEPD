@@ -114,9 +114,9 @@ int main(void)
   MX_ADC_Init();
   /* USER CODE BEGIN 2 */
 
+  // Rerun RTC_Init with bug fix, to make sure HAL_RTC_Init is run
   MX_RTC_Init_fixed();
-  Display_init();
-  HAL_ADC_Start(&hadc);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -215,8 +215,8 @@ static void MX_ADC_Init(void)
   hadc.Init.DMAContinuousRequests = DISABLE;
   hadc.Init.EOCSelection = ADC_EOC_SINGLE_CONV;
   hadc.Init.Overrun = ADC_OVR_DATA_PRESERVED;
-  hadc.Init.LowPowerAutoWait = DISABLE;
-  hadc.Init.LowPowerFrequencyMode = DISABLE;
+  hadc.Init.LowPowerAutoWait = ENABLE;
+  hadc.Init.LowPowerFrequencyMode = ENABLE;
   hadc.Init.LowPowerAutoPowerOff = DISABLE;
   if (HAL_ADC_Init(&hadc) != HAL_OK)
   {

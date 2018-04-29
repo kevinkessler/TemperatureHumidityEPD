@@ -31,6 +31,7 @@
 #define TEMP_REG 1
 #define HUM_REG 2
 #define VOLT_REG 3
+#define ADC_CAL_REG 4
 
 extern ADC_HandleTypeDef hadc;
 extern I2C_HandleTypeDef hi2c1;
@@ -83,23 +84,25 @@ static void drawBattery(Paint *paint, uint8_t value) {
 	Paint_DrawBitmapAt(paint, BATT_X, BATT_Y, BATT_W, BATT_H, batt_image[value], COLORED);
 }
 
-static uint8_t getBatteryIndex(uint8_t value) {
-	if(value > 80)
+static uint8_t getBatteryIndex(uint16_t value) {
+	if(value > 2900)
 		return 4;
 
-	if(value > 60)
+	if(value > 2800)
 		return 3;
 
-	if(value > 40)
+	if(value > 2600)
 		return 2;
 
-	if(value > 20)
+	if(value > 2400)
 		return 1;
 
 	return 0;
 }
 
 void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
+
+	uint8_t frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8];
 
 	HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_RESET);
 	EPD_Init(&epd);
@@ -150,8 +153,8 @@ void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
 
 }
 
-int Display_init() {
-	frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
+int Font_init() {
+	//frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
 
 	nums[0] = TEXT_0;
 	nums[1] = TEXT_1;
@@ -173,7 +176,7 @@ int Display_init() {
 	return 0;
 }
 
-void enterStandby(uint8_t seconds)
+void enterStandby(uint16_t seconds)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -183,6 +186,9 @@ void enterStandby(uint8_t seconds)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
+//	HAL_PWREx_EnableUltraLowPower();
+//	HAL_PWREx_EnableFastWakeUp();
+
 	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
 	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, seconds, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
@@ -190,28 +196,66 @@ void enterStandby(uint8_t seconds)
 	HAL_PWR_EnterSTANDBYMode();
 }
 
+uint16_t readVoltage(){
+
+	//Wait until ADC is fully powered up, probably not necessary
+	while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VREFINTRDY));
+
+	HAL_ADC_Start(&hadc);
+	HAL_ADC_PollForConversion(&hadc, 1000);
+
+	uint32_t volt_count = HAL_ADC_GetValue(&hadc);
+
+	uint16_t voltage = (3000 * (*VREFINT_CAL_ADDR))/volt_count;
+	uint8_t volt_idx = getBatteryIndex(voltage);
+	HAL_ADC_Stop(&hadc);
+
+	return volt_idx;
+}
+
 void pollSensors(){
 
 	uint8_t hum_data[2];
 	uint8_t temp_data[2];
 
+	// Handle cold restart vs STANDY resume
+	if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
+	{
+		//Resumed from STANDBY
+		//ADC Must be enabled to set the calibration value
+		__HAL_ADC_ENABLE(&hadc);
+		uint32_t adc_cal = HAL_RTCEx_BKUPRead(&hrtc,ADC_CAL_REG);
+		HAL_ADCEx_Calibration_SetValue(&hadc, ADC_SINGLE_ENDED, adc_cal);
+	}
+	else
+	{
+		HAL_ADCEx_Calibration_Start(&hadc,ADC_SINGLE_ENDED);
+		uint32_t adc_cal = HAL_ADCEx_Calibration_GetValue(&hadc, ADC_SINGLE_ENDED);
+		HAL_RTCEx_BKUPWrite(&hrtc, ADC_CAL_REG, adc_cal);
+
+	}
+
+	Font_init();
+
+	// Configure Standby mode to turn off voltage reference, and not to wait for it to power up after resuming
+	HAL_PWREx_EnableFastWakeUp();
+	HAL_PWREx_EnableUltraLowPower();
+
 	int16_t temp_last = HAL_RTCEx_BKUPRead(&hrtc, TEMP_REG);
 	int16_t hum_last = HAL_RTCEx_BKUPRead(&hrtc, HUM_REG);
 	uint8_t volt_last = HAL_RTCEx_BKUPRead(&hrtc, VOLT_REG);
 
-	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 60000);
-	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe3, 1, temp_data, 2, 60000);
+	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 6000);
+	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe3, 1, temp_data, 2, 6000);
 
 	int16_t hum = (int16_t)(((hum_data[0] * 256 + hum_data[1]) * 125 / 65536.0) - 5.5); //Rounding by adding 0.5
 	int16_t temp = (int16_t)(((((temp_data[0] << 8) + temp_data[1]) * 175.72 / 65536.0) - 46.85) * (9.0/5.0) + 32.5);
 
 
-	HAL_ADC_PollForConversion(&hadc, 1000);
-	uint32_t volt_count = HAL_ADC_GetValue(&hadc);
+	//Wait until ADC is fully powered up
+	while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VREFINTRDY));
 
-	float voltage = 3.0 * (*VREFINT_CAL_ADDR)/volt_count;
-	uint8_t v_perc = (uint8_t)(((voltage - 2.0)/1.0) * 100.0);
-	uint8_t volt_idx = getBatteryIndex(v_perc);
+	uint16_t volt_idx=readVoltage();
 
 	uint8_t sec=20;
 	if ((temp_last != temp)||(hum_last != hum)||(volt_last != volt_idx)) {
@@ -224,7 +268,6 @@ void pollSensors(){
 	HAL_RTCEx_BKUPWrite(&hrtc, VOLT_REG, volt_idx);
 
 	enterStandby(sec);
-
 
 }
 

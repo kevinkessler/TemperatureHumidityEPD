@@ -100,7 +100,7 @@ static uint8_t getBatteryIndex(uint16_t value) {
 	return 0;
 }
 
-void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
+static void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
 
 	uint8_t frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8];
 
@@ -153,7 +153,7 @@ void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
 
 }
 
-int Font_init() {
+static void Font_init() {
 	//frame_buffer = (unsigned char*)malloc(EPD_WIDTH * EPD_HEIGHT / 8);
 
 	nums[0] = TEXT_0;
@@ -173,10 +173,9 @@ int Font_init() {
 	batt_image[3] = BATTERY_75;
 	batt_image[4] = BATTERY_100;
 
-	return 0;
 }
 
-void enterStandby(uint16_t seconds)
+static void enterStandby(uint16_t seconds)
 {
 	GPIO_InitTypeDef GPIO_InitStruct;
 
@@ -186,8 +185,6 @@ void enterStandby(uint16_t seconds)
 	GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
 	HAL_GPIO_Init(GPIOA, &GPIO_InitStruct);
 
-//	HAL_PWREx_EnableUltraLowPower();
-//	HAL_PWREx_EnableFastWakeUp();
 
 	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
 	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
@@ -196,7 +193,7 @@ void enterStandby(uint16_t seconds)
 	HAL_PWR_EnterSTANDBYMode();
 }
 
-uint16_t readVoltage(){
+static uint16_t readVoltage(){
 
 	//Wait until ADC is fully powered up, probably not necessary
 	while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VREFINTRDY));
@@ -213,10 +210,42 @@ uint16_t readVoltage(){
 	return volt_idx;
 }
 
-void pollSensors(){
+static void readSi7021(int16_t *temp, int16_t *hum) {
 
 	uint8_t hum_data[2];
 	uint8_t temp_data[2];
+	uint8_t cmd;
+
+	cmd=0xF5;   // Read RH, No Clock Stretch
+	if(HAL_I2C_Master_Transmit(&hi2c1, 0x80, &cmd, 1,1000) != HAL_OK)
+	{
+		*temp=999;
+		*hum=999;
+		return;
+	}
+
+
+	sleepDelay(20);
+	do {
+		HAL_I2C_Master_Receive(&hi2c1, 0x80, hum_data, 2, 6000);
+	} while(hi2c1.ErrorCode & HAL_I2C_ERROR_AF); // Check for NACK
+
+
+	if(HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe0, 1, temp_data, 2, 1000) != HAL_OK)    // Read Temperature from Previous Measuement
+	{
+		*temp=999;
+		*hum=999;
+		return;
+	}
+
+
+	*hum = (int16_t)(((hum_data[0] * 256 + hum_data[1]) * 125 / 65536.0) - 5.5); //Rounding by adding 0.5
+	*temp = (int16_t)(((((temp_data[0] << 8) + temp_data[1]) * 175.72 / 65536.0) - 46.85) * (9.0/5.0) + 32.5);
+}
+
+void pollSensors(){
+
+
 
 	// Handle cold restart vs STANDY resume
 	if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
@@ -245,15 +274,9 @@ void pollSensors(){
 	int16_t hum_last = HAL_RTCEx_BKUPRead(&hrtc, HUM_REG);
 	uint8_t volt_last = HAL_RTCEx_BKUPRead(&hrtc, VOLT_REG);
 
-	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe5, 1, hum_data, 2, 6000);
-	HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe3, 1, temp_data, 2, 6000);
+	int16_t hum,temp;
 
-	int16_t hum = (int16_t)(((hum_data[0] * 256 + hum_data[1]) * 125 / 65536.0) - 5.5); //Rounding by adding 0.5
-	int16_t temp = (int16_t)(((((temp_data[0] << 8) + temp_data[1]) * 175.72 / 65536.0) - 46.85) * (9.0/5.0) + 32.5);
-
-
-	//Wait until ADC is fully powered up
-	while(!__HAL_PWR_GET_FLAG(PWR_FLAG_VREFINTRDY));
+	readSi7021(&temp, &hum);
 
 	uint16_t volt_idx=readVoltage();
 
@@ -274,14 +297,14 @@ void pollSensors(){
 void sleepWait() {
 	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
 	HAL_SuspendTick();
-	HAL_PWR_EnterSTOPMode(PWR_MAINREGULATOR_ON, PWR_STOPENTRY_WFI);
+	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	HAL_ResumeTick();
 
 }
 
 void sleepDelay(uint16_t delaytime){
 
-	if(delaytime < 25) {
+	if(delaytime < 10) {
 		HAL_Delay(delaytime);
 		return;
 	}

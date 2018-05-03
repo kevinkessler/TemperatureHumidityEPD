@@ -29,8 +29,6 @@
 #define BATT_X 172
 #define BATT_Y 2
 
-void displayData(int16_t temperature, int16_t humidity, uint8_t battery);
-int Display_init(void);
 void pollSensors(void);
 void sleepDelay(uint16_t delaytime);
 void sleepWait(void);

@@ -226,8 +226,13 @@ static void readSi7021(int16_t *temp, int16_t *hum) {
 
 
 	sleepDelay(20);
+	uint16_t polls=0;
 	do {
 		HAL_I2C_Master_Receive(&hi2c1, 0x80, hum_data, 2, 6000);
+		if(++polls>1000){
+			*temp=999;
+			*hum=999;
+		}
 	} while(hi2c1.ErrorCode & HAL_I2C_ERROR_AF); // Check for NACK
 
 

@@ -75,12 +75,19 @@ Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_flash.c \
 Src/main.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_tim.c \
 Drivers/STM32L0xx_HAL_Driver/Src/stm32l0xx_hal_rcc.c \
-Src/epd1in54b.c \
 Src/epdif.c \
 Src/epdpaint.c \
 Src/imagedata.c \
 Src/edpcontroller.c \
 /Src/system_stm32l0xx.c
+
+ifeq ($(MODULE_B), true)
+  C_SOURCES += Src/epd1in54b.c
+  C_SOURCES += Src/displayFunctionB.c
+else
+  C_SOURCES += Src/epd1in54.c
+  C_SOURCES += Src/displayFunction.c
+endif
 
 # ASM sources
 ASM_SOURCES =  \
@@ -151,8 +158,14 @@ CFLAGS = $(MCU) $(C_DEFS) $(C_INCLUDES) $(OPT) -Wall -fdata-sections -ffunction-
 
 ifeq ($(DEBUG), 1)
 CFLAGS += -g -gdwarf-2
+OPT = -Og
+else
+OPT = -Os
 endif
 
+ifeq ($(MODULE_B), true)
+  CFLAGS += -DMODULE_B=true
+endif
 
 # Generate dependency information
 CFLAGS += -MMD -MP -MF"$(@:%.o=%.d)" -MT"$(@:%.o=%.d)"

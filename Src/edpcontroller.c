@@ -21,12 +21,12 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include "epdcontroller.h"
-#include "epd1in54b.h"
 #include "epdif.h"
 #include "epdpaint.h"
 #include "imagedata.h"
 #include "stm32l0xx_hal.h"
 #include "main.h"
+#include "displayFunction.h"
 
 #define TEMP_REG 1
 #define HUM_REG 2
@@ -41,9 +41,7 @@ unsigned char* frame_buffer;
 unsigned char const *nums[10];
 unsigned char const *batt_image[5];
 
-EPD epd;
-
-static int setNumbers(Paint *paint, int16_t value, uint8_t x, uint8_t y, uint8_t symbol) {
+int setNumbers(Paint *paint, int16_t value, uint8_t x, uint8_t y, uint8_t symbol) {
 	if (value < 0) {
 		if(value < -99)
 			return -1;
@@ -80,7 +78,7 @@ static int setNumbers(Paint *paint, int16_t value, uint8_t x, uint8_t y, uint8_t
 	return 0;
 }
 
-static void drawBattery(Paint *paint, uint8_t value) {
+void drawBattery(Paint *paint, uint8_t value) {
 	Paint_DrawBitmapAt(paint, BATT_X, BATT_Y, BATT_W, BATT_H, batt_image[value], COLORED);
 }
 
@@ -98,59 +96,6 @@ static uint8_t getBatteryIndex(uint16_t value) {
 		return 1;
 
 	return 0;
-}
-
-static void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
-
-	uint8_t frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8];
-
-	HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_RESET);
-	EPD_Init(&epd);
-
-	Paint paint_black;
-	Paint_Init(&paint_black, frame_buffer, epd.width, epd.height, ROTATE_90);
-	Paint_Clear(&paint_black, UNCOLORED);
-
-	Paint_DrawBitmapAt(&paint_black, TEMP_TEXT_X, TEMP_TEXT_Y, TEMP_W, TEMP_H , TEMPERATURE_TEXT, COLORED);
-	Paint_DrawBitmapAt(&paint_black, HUM_TEXT_X, HUM_TEXT_Y, HUM_W, HUM_H , HUMIDITY_TEXT, COLORED);
-
-
-	if((temperature <= 78) && (temperature >= 60))
-	   setNumbers(&paint_black, temperature, TEMP_NUM_X, TEMP_NUM_Y, DEGREE_SIGN);
-
-	if((humidity <= 90) && (humidity >= 20))
-	   setNumbers(&paint_black, humidity, HUM_NUM_X, HUM_NUM_Y, PERCENT_SIGN);
-
-	if(battery >= 2)
-	   drawBattery(&paint_black, battery);
-
-
-	EPD_LoadBlackFrame(&epd, frame_buffer);
-
-	Paint paint_red;
-	Paint_Init(&paint_red, frame_buffer, epd.width, epd.height, ROTATE_90);
-
-	Paint_Clear(&paint_red, UNCOLORED);
-
-	if((temperature > 78) || (temperature < 60))
-	   if(setNumbers(&paint_red, temperature, TEMP_NUM_X, TEMP_NUM_Y, DEGREE_SIGN) < 0)
-		   setNumbers(&paint_red, 999, TEMP_NUM_X, TEMP_NUM_Y, DEGREE_SIGN);
-
-	if((humidity > 90) || (humidity < 20))
-	   if(setNumbers(&paint_red, humidity, HUM_NUM_X, HUM_NUM_Y, PERCENT_SIGN) < 0)
-		   setNumbers(&paint_red, 999, HUM_NUM_X, HUM_NUM_Y, PERCENT_SIGN);
-
-	if(battery < 2)
-	   drawBattery(&paint_red, battery);
-
-	EPD_LoadRedFrame(&epd, frame_buffer);
-
-
-	EPD_DisplayRefresh(&epd);
-	EPD_WaitUntilIdle(&epd);
-	EPD_Sleep(&epd);
-	HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_SET);
-
 }
 
 static void Font_init() {

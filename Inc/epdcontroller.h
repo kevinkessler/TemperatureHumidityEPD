@@ -8,6 +8,8 @@
 #ifndef INC_EPDCONTROLLER_H_
 #define INC_EPDCONTROLLER_H_
 
+#include "epdpaint.h"
+
 #define VREFINT_CAL_ADDR ((uint16_t*) ((uint32_t) 0x1FF80078))
 
 #define COLORED      1
@@ -29,6 +31,8 @@
 #define BATT_X 172
 #define BATT_Y 2
 
+void drawBattery(Paint *paint, uint8_t value);
+int setNumbers(Paint *paint, int16_t value, uint8_t x, uint8_t y, uint8_t symbol);
 void pollSensors(void);
 void sleepDelay(uint16_t delaytime);
 void sleepWait(void);

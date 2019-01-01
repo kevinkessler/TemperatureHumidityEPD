@@ -121,7 +121,7 @@ int main(void)
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
 
-  pollSensors();
+	 pollSensors();
   /* USER CODE END WHILE */
 
   /* USER CODE BEGIN 3 */
@@ -383,7 +383,10 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOB_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
-  HAL_GPIO_WritePin(GPIOA, SPI_CS_Pin|DC_Pin|RST_Pin|EPD_POWER_Pin, GPIO_PIN_RESET);
+  HAL_GPIO_WritePin(GPIOA, SPI_CS_Pin|DC_Pin|RST_Pin, GPIO_PIN_RESET);
+
+  /*Configure GPIO pin Output Level */
+  HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_SET);
 
   /*Configure GPIO pins : PC14 PC15 */
   GPIO_InitStruct.Pin = GPIO_PIN_14|GPIO_PIN_15;
@@ -412,7 +415,7 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : EPD_POWER_Pin */
   GPIO_InitStruct.Pin = EPD_POWER_Pin;
-  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_OD;
+  GPIO_InitStruct.Mode = GPIO_MODE_OUTPUT_PP;
   GPIO_InitStruct.Pull = GPIO_NOPULL;
   GPIO_InitStruct.Speed = GPIO_SPEED_FREQ_LOW;
   HAL_GPIO_Init(EPD_POWER_GPIO_Port, &GPIO_InitStruct);

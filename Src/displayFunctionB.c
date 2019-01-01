@@ -29,9 +29,18 @@ EPD epd;
 
 void displayData(int16_t temperature, int16_t humidity, uint8_t battery) {
 
+	GPIO_InitTypeDef GPIO_InitStruct;
+
 	uint8_t frame_buffer[EPD_WIDTH * EPD_HEIGHT / 8];
 
 	HAL_GPIO_WritePin(EPD_POWER_GPIO_Port, EPD_POWER_Pin, GPIO_PIN_RESET);
+
+	/*Configure GPIO pin : BUSY_Pin */
+	GPIO_InitStruct.Pin = BUSY_Pin;
+	GPIO_InitStruct.Mode = GPIO_MODE_IT_FALLING;
+	GPIO_InitStruct.Pull = GPIO_NOPULL;
+	HAL_GPIO_Init(BUSY_GPIO_Port, &GPIO_InitStruct);
+
 	EPD_Init(&epd);
 
 	Paint paint_black;

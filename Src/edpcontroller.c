@@ -28,10 +28,6 @@
 #include "main.h"
 #include "displayFunction.h"
 
-#define TEMP_REG 1
-#define HUM_REG 2
-#define VOLT_REG 3
-#define ADC_CAL_REG 4
 
 extern ADC_HandleTypeDef hadc;
 extern I2C_HandleTypeDef hi2c1;
@@ -181,7 +177,7 @@ static void readSi7021(int16_t *temp, int16_t *hum) {
 	} while(hi2c1.ErrorCode & HAL_I2C_ERROR_AF); // Check for NACK
 
 
-	if(HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe0, 1, temp_data, 2, 1000) != HAL_OK)    // Read Temperature from Previous Measuement
+	if(HAL_I2C_Mem_Read(&hi2c1, 0x80, 0xe0, 1, temp_data, 2, 1000) != HAL_OK)    // Read Temperature from Previous Measurement
 	{
 		*temp=999;
 		*hum=999;
@@ -194,8 +190,6 @@ static void readSi7021(int16_t *temp, int16_t *hum) {
 }
 
 void pollSensors(){
-
-
 
 	// Handle cold restart vs STANDY resume
 	if(__HAL_PWR_GET_FLAG(PWR_FLAG_SB) != RESET)
@@ -246,6 +240,11 @@ void pollSensors(){
 
 void sleepWait() {
 	HAL_RTCEx_DeactivateWakeUpTimer(&hrtc);
+	__HAL_PWR_CLEAR_FLAG(PWR_FLAG_WU);
+
+	// 20 Second timeout to wait for interrupt from BUSY line to occur
+	HAL_RTCEx_SetWakeUpTimer_IT(&hrtc, 20, RTC_WAKEUPCLOCK_CK_SPRE_16BITS);
+
 	HAL_SuspendTick();
 	HAL_PWR_EnterSTOPMode(PWR_LOWPOWERREGULATOR_ON, PWR_STOPENTRY_WFI);
 	HAL_ResumeTick();
